@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 设置 JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'   # Eclipse Temurin 是 GitHub 官方推荐发行版
           java-version: ${{ matrix.java }}
