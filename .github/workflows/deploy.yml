@@ -1,0 +1,58 @@
+name: 部署到 GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    # 仅当源码或部署配置变化时才重新部署，避免无意义构建
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - '.github/workflows/deploy.yml'
+
+# Pages 部署需要明确的写权限（这是新版官方部署方式最容易踩的坑）
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一个部署，避免并发冲突
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK 21 并缓存 Maven 依赖
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: 编译与打包（跳过测试，CI 阶段已覆盖）
+        run: mvn -B package -DskipTests
+
+      - name: 用 Java 生成静态站点
+        # exec:java 会运行 SiteGenerator，把 HTML 写到 target/site
+        run: mvn -B exec:java -Dexec.args="target/site"
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

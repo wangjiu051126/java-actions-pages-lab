@@ -1,0 +1,16 @@
+# Maven 构建产物
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# 本地生成的站点（由 CI 生成并部署，无需提交）
+site/

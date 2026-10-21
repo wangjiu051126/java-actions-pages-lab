@@ -1,0 +1,49 @@
+name: Java CI
+
+# 触发条件：推送到 main 分支，或对任意分支发起 Pull Request 时运行
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+# 默认权限：最小原则，CI 不需要写权限
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: 构建与测试 (JDK ${{ matrix.java }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    # 矩阵策略：在不同操作系统与 JDK 版本上并行验证，显著提升实验"复杂度"
+    strategy:
+      fail-fast: false          # 一个组合失败不影响其它组合继续跑
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+        java: [ '17', '21' ]
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'   # Eclipse Temurin 是 GitHub 官方推荐发行版
+          java-version: ${{ matrix.java }}
+          cache: 'maven'            # 自动缓存 ~/.m2，加速依赖下载（关键优化点）
+
+      - name: 编译、测试并生成覆盖率报告
+        run: mvn -B verify          # verify = 编译 + 测试 + 打包 + JaCoCo 报告
+
+      - name: 上传测试报告
+        if: always()                # 即便测试失败也保留产物便于排查
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-jdk${{ matrix.java }}
+          path: target/surefire-reports/
+
+      - name: 上传覆盖率报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-${{ matrix.os }}-jdk${{ matrix.java }}
+          path: target/site/jacoco/
