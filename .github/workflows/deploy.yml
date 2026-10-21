@@ -42,7 +42,7 @@ jobs:
         run: mvn -B exec:java -Dexec.args="target/site"
 
       - name: 上传 Pages 产物
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: target/site
 
